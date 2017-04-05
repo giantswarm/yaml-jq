@@ -1,0 +1,16 @@
+#!/usr/local/bin/python
+
+import sys
+import yaml
+import json
+import subprocess
+
+# def json_serial(obj):
+#     # all obj's dumped to str
+#     return str(obj)
+
+args = ["jq"] + sys.argv[1:]
+json_in = json.dumps(yaml.load(sys.stdin))
+run = subprocess.run(args, input=json_in.encode('utf8'), stdout=subprocess.PIPE)
+
+print(yaml.dump(json.loads(run.stdout.decode('utf8')), default_flow_style=False))

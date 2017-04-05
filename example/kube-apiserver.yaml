@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    component: kube-apiserver
+    tier: control-plane
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    - --audit-log-path=/var/log/kubernetes/kube-apiserver-audit.log
+    - --runtime-config=api/all=true
+    - --audit-log-maxbackup=4
+    - --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt
+    - --allow-privileged=true
+    - --experimental-bootstrap-token-auth=true
+    - --requestheader-username-headers=X-Remote-User
+    - --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+    - --insecure-port=0
+    - --requestheader-extra-headers-prefix=X-Remote-Extra-
+    - --client-ca-file=/etc/kubernetes/pki/ca.crt
+    - --tls-cert-file=/etc/kubernetes/pki/apiserver.crt
+    - --storage-backend=etcd3
+    - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+    - --service-cluster-ip-range=10.96.0.0/12
+    - --service-account-key-file=/etc/kubernetes/pki/sa.pub
+    - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
+    - --secure-port=6443
+    - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds
+    - --requestheader-group-headers=X-Remote-Group
+    - --requestheader-allowed-names=front-proxy-client
+    - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt
+    - --authorization-mode=RBAC
+    - --advertise-address=10.8.173.133
+    - --etcd-servers=http://127.0.0.1:2379
+    image: gcr.io/google_containers/kube-apiserver-amd64:v1.6.0
+    livenessProbe:
+      failureThreshold: 8
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: 6443
+        scheme: HTTPS
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    name: kube-apiserver
+    resources:
+      requests:
+        cpu: 250m
+    volumeMounts:
+    - mountPath: /etc/kubernetes/
+      name: k8s
+      readOnly: true
+    - mountPath: /etc/ssl/certs
+      name: certs
+    - mountPath: /etc/pki
+      name: pki
+  hostNetwork: true
+  volumes:
+  - hostPath:
+      path: /etc/kubernetes
+    name: k8s
+  - hostPath:
+      path: /etc/ssl/certs
+    name: certs
+  - hostPath:
+      path: /etc/pki
+    name: pki
